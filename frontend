@@ -1,0 +1,73 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+void main() {
+  runApp(CodeReviewApp());
+}
+
+class CodeReviewApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'AI Code Review',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: CodeReviewScreen(),
+    );
+  }
+}
+
+class CodeReviewScreen extends StatefulWidget {
+  @override
+  _CodeReviewScreenState createState() => _CodeReviewScreenState();
+}
+
+class _CodeReviewScreenState extends State<CodeReviewScreen> {
+  TextEditingController codeController = TextEditingController();
+  String review = "";
+
+  Future<void> reviewCode() async {
+    var response = await http.post(
+      Uri.parse('http://127.0.0.1:8000/review'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"code": codeController.text}),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        review = jsonDecode(response.body)["review"];
+      });
+    } else {
+      setState(() {
+        review = "Error reviewing code";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("AI Code Review")),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: codeController,
+              decoration: InputDecoration(labelText: "Enter Code"),
+              maxLines: 5,
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: reviewCode,
+              child: Text("Review Code"),
+            ),
+            SizedBox(height: 10),
+            Text("Review Output:", style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(review),
+          ],
+        ),
+      ),
+    );
+  }
+}
